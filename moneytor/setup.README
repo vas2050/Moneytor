@@ -1,0 +1,31 @@
+#
+# Native React set up instructions
+#
+#npm install -g react-native-cli
+react-native init moneytor
+cd moneytor
+npm i -s react-native-simple-radio-button
+npm i -s react-native-firebase
+
+cp ../App.js .
+cp ../LaunchScreen.xib ios/moneytor/Base.lproj/LaunchScreen.xib
+
+# update pod if anything required for firebase and others
+cd ios
+pod install
+
+#react-native start
+#
+
+# AppDelegate.m
+#@import Firebase;
+#@implementation AppDelegate
+#
+#- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+#{
+# [FIRApp configure];
+# return YES;
+#}
+
+cd ../
+react-native link react-native-vector-icons
