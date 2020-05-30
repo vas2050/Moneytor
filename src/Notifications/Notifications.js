@@ -8,7 +8,7 @@ let notificationListener;
 let messageListener;
 
 const createNotificationChannel = () => {
-  console.log("Notifications::Notifications::createNotificationChannel() called");
+  console.log("INFO: Notifications::Notifications::createNotificationChannel() called");
   new firebase
     .notifications
     .Android
@@ -42,7 +42,7 @@ const createNotificationChannel = () => {
 };
 
 const checkPermission = async () => {
-  console.log("Notifications::Notifications::checkPermission() called");
+  console.log("INFO: Notifications::Notifications::checkPermission() called");
   const enabled = await firebase.messaging().hasPermission();
 
   if (enabled) {
@@ -56,7 +56,7 @@ const checkPermission = async () => {
 };
 
 const requestPermission = async () => {
-  console.log("Notifications::Notifications::requestPermission() called");
+  console.log("INFO: Notifications::Notifications::requestPermission() called");
   let fcmToken;
   try {
     // try getting permission
@@ -74,7 +74,7 @@ const requestPermission = async () => {
 
 // get token and store for future use
 const getToken = async () => {
-  console.log("Notifications::Notifications::getToken() called");
+  console.log("INFO: Notifications::Notifications::getToken() called");
   let fcmToken = (await readStoreItems('FCMToken'))[0];
   if (!fcmToken) {
     fcmToken = await firebase.messaging().getToken();
@@ -87,7 +87,7 @@ const getToken = async () => {
 };
 
 const storeNotification = async notification => {
-  console.log("Notifications::Notifications::storeNotification() called");
+  console.log("INFO: Notifications::Notifications::storeNotification() called");
   let notif = await readStoreItems('NOTIFs');
   if (notif.length >= 10) { // store only last 5 notifications
     notif.splice(9); // take of older ones
@@ -98,7 +98,7 @@ const storeNotification = async notification => {
 };
 
 const createNotificationListeners = async () => {
-  console.log("Notifications::Notifications::createNotificationListeners() called");
+  console.log("INFO: Notifications::Notifications::createNotificationListeners() called");
   // on receival of notification
   notificatonListener = firebase.notifications().onNotification(async notification => {
     const { title, body, notificationId } = notification;
@@ -146,26 +146,27 @@ const createNotificationListeners = async () => {
 };
 
 const scheduleNotification = async (name, schedule) => {
-  console.log("Notifications::Notifications::scheduleNotification() called");
-  let secondsToAdd, repeatInterval;
-  schedule = "minute";
+  console.log("INFO: Notifications::Notifications::scheduleNotification() called");
+  let secondsToAdd;
+  let repeatInterval;
+ 
+  schedule = 'minute'; // for testing
   switch(schedule) {
-    case 'hourly':
-      secondsToAdd = 1*60*60;
-      repeatInterval = 'hour';
-      break;
     case 'daily':
       secondsToAdd = 24*60*60;
       repeatInterval = 'day';
       break;
+    case 'weekly':
+      secondsToAdd = 7*24*60*60;
+      repeatInterval = 'week';
+      break;
     case 'monthly':
-      secondsToAdd = 30*24*60*60;
+      secondsToAdd = 4*7*24*60*60;
       repeatInterval = 'month';
       break;
     default:
       secondsToAdd = 60;
       repeatInterval = 'minute';
-      //return false;
   }
 
   const date = new Date();
@@ -187,7 +188,7 @@ const scheduleNotification = async (name, schedule) => {
 };
 
 const cancelNotification = async (id) => {
-  console.log("Notifications::Notifications::cancelNotification() called");
+  console.log("INFO: Notifications::Notifications::cancelNotification() called");
   firebase
   .notifications()
   .cancelNotification(id)
@@ -201,7 +202,7 @@ const cancelNotification = async (id) => {
 };
 
 const _buildNotification = (name) => {
-  console.log("Notifications::Notifications::_buildNotification() called");
+  console.log("INFO: Notifications::Notifications::_buildNotification() called");
   //const title = (Platform.OS === "android") ? "Android Updates" : "Apple Updates";
   const title = `Rate updates for ${name}`;
   const body = `The current xchange rate from ${name}: 1 USD = XX INR`;

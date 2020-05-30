@@ -11,12 +11,12 @@ import {
 
 export default class ContactUs extends Component {
   componentDidMount = () => {
-    console.log("Contact::componentDidMount() called");
+    console.log("INFO: Contact::componentDidMount() called");
     //nothing for now
   };
 
   componentWillUnmount = () => {
-    console.log("Contact::componentWillUnmount() called");
+    console.log("INFO: Contact::componentWillUnmount() called");
     // nothing for now
   };
 

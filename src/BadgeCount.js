@@ -13,13 +13,13 @@ export default class BadgeCount extends Component {
   };
 
   getBadgeCount = async () => {
-    console.log("BadgeCount::getBadgeCount() called");
+    console.log("INFO: BadgeCount::getBadgeCount() called");
     const badgeCount = await getUnreadCount('NOTIFs');
     this.setState({badgeCount});
   };
 
   componentDidMount = () => {
-    console.log("BadgeCount::componentDidMount() called");
+    console.log("INFO: BadgeCount::componentDidMount() called");
     this.getBadgeCount();
   };
 

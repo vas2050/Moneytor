@@ -25,42 +25,38 @@ import BadgeCount from './src/BadgeCount';
 import Notifications from './src/Notifications';
 
 const ContactScreen = () => {
-  console.log("App::ContactScreen() called");
+  console.log("INFO: App::ContactScreen() called");
   return (
-    <View style={style.view}>
+    <ScrollView contentContainerStyle={style.scrollView}>
       <ContactUs />
-    </View>
+    </ScrollView>
   );
 };
 
 const SettingsScreen = () => {
-  console.log("App::SettingsScreen() called");
+  console.log("INFO: App::SettingsScreen() called");
   return (
-    <View style={style.view}>
+    <ScrollView contentContainerStyle={style.scrollView}>
       <Settings />
-    </View>
+    </ScrollView>
   );
 };
 
 const AlertScreen = () => {
-  console.log("App::AlertScreen() called");
+  console.log("INFO: App::AlertScreen() called");
   return (
-    <ScrollView>
-      <View style={style.view}>
-        <Notifs />
-      </View>
+    <ScrollView contentContainerStyle={style.scrollView}>
+      <Notifs />
     </ScrollView>
   );
 };
 
 const HomeScreen = () => {
-  console.log("App::HomeScreen() called");
+  console.log("INFO: App::HomeScreen() called");
   return (
-      <View style={style.view}>
-        <ScrollView>
-          <Home />
-        </ScrollView>
-      </View>
+    <ScrollView contentContainerStyle={style.scrollView}>
+      <Home />
+    </ScrollView>
   );
 };
 
@@ -131,7 +127,7 @@ const AppContainer = createAppContainer(TabNavigator);
 
 export default class App extends Component {
   componentDidMount = () => {
-    console.log("App::componentDidMount() called");
+    console.log("INFO: App::componentDidMount() called");
     // for Android devices, notification channel must be created
     // and specified while posting a notification
     if (Platform.OS === "android") {
@@ -144,7 +140,7 @@ export default class App extends Component {
   };
 
   componentWillUnmount = () => {
-    console.log("App::componentWillUnmount() called");
+    console.log("INFO: App::componentWillUnmount() called");
     Notifications.notificationListener = null;
     Notifications.notificationOpenedListener = null;
   };
@@ -160,7 +156,7 @@ const style = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     alignItems: 'center'
   },
   box: {
@@ -174,7 +170,8 @@ const style = StyleSheet.create({
   view: {
     justifyContent: 'center',
     backgroundColor: 'white',
-    flex: 9
+    flex: 9,
+    alignSelf: "center"
   },
   footer: {
     backgroundColor: 'yellow',
@@ -184,4 +181,11 @@ const style = StyleSheet.create({
     margin: 3,
     textAlign: 'center'
   },
+  scrollView: {
+    flexGrow: 1,
+    justifyContent: "center",
+    borderColor: 'maroon',
+    borderWidth: 0,
+    alignItems: "center"
+  }
 });

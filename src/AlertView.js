@@ -16,21 +16,21 @@ export default class AlertView extends Component {
   };
 
   getNotifications = async () => {
-    console.log("Notif::getNotifications() called");
+    console.log("INFO: Notif::getNotifications() called");
     const notif = await readStoreItems('NOTIFs');
     if (notif && notif.length) {
-      const note = "Last 15 Notifications";
+      const note = "Last 10 Notifications";
       this.setState({notif: notif.reverse(), note});
     }
   };
 
   componentDidMount = () => {
-    console.log("Notif::componentDidMount() called");
+    console.log("INFO: Notif::componentDidMount() called");
     this.getNotifications();
   };
 
   handlePress = async (index) => {
-    console.log("Notif::handlePress() called");
+    console.log("INFO: Notif::handlePress() called");
     let { notif } = this.state;
     notif[index].read = true;
     this.setState({notif});
@@ -67,10 +67,9 @@ const style = StyleSheet.create({
   container: {
     backgroundColor: "white",
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: "center",
     alignItems: "center",
     flexDirection: "column",
-    marginTop: 20,
   },
   buttonView: {
     alignItems: "center",
@@ -91,9 +90,9 @@ const style = StyleSheet.create({
     fontVariant: ['small-caps']
   },
   note: {
-    marginTop: 10,
+    marginBottom: 20,
     color: "black",
     fontWeight: "bold",
-    alignSelf: "center"
+    alignSelf: "center",
   }
 });

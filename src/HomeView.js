@@ -21,7 +21,7 @@ import Notifications from './Notifications';
 
 export default class Main extends Component {
   // define the state for various companies and default schedule: daily
-  // look up in the schedules with id: 1 for daily
+  // look up in the schedules with id: 1 for weekly
   state = {
     comps: [
       {id: 0, isOn: false, schedule: 1, name: 'xoom'},
@@ -31,20 +31,20 @@ export default class Main extends Component {
 
     // for the sake of look up, keeping id value as 'value'
     schedules: [
-      {value: 0, label: ' '.repeat(4), id: 'hourly'},
-      {value: 1, label: ' '.repeat(4), id: 'daily'},
+      {value: 0, label: ' '.repeat(4), id: 'daily'},
+      {value: 1, label: ' '.repeat(4), id: 'weekly'},
       {value: 2, label: ' '.repeat(4), id: 'monthly'}
     ]
   };
 
   componentDidMount = () => {
-    console.log("Home::componentDidMount() called");
+    console.log("INFO: Home::componentDidMount() called");
     // nothing for now
   };
 
   // to be built soon - to show last 5 days statistics
   handleButton = async index => {
-    console.log("Home::handleButton() called");
+    console.log("INFO: Home::handleButton() called");
     const item = {...this.state.comps[index]};
     const isOn = item.isOn ? "Switched ON" : "Switched OFF";
     alert(item.name + ": " + isOn);
@@ -52,7 +52,7 @@ export default class Main extends Component {
 
   // save state of switch
   handleSwitch = async index => {
-    console.log("Home::handleSwitch() called");
+    console.log("INFO: Home::handleSwitch() called");
     const curComps = [...this.state.comps];
     let cRow = {...curComps[index]};
     const compName = cRow.name.toUpperCase();
@@ -82,32 +82,45 @@ export default class Main extends Component {
     }
   };
 
+  delay = async sec => {
+    setTimeout(() => console.log("INFO: delay() called"), sec*1000);
+  };
+
   // save state of schedule
   handleRadio = async (compId, scheduleId) => {
-    console.log("Home::handleRadio() called");
+    console.log("INFO: Home::handleRadio() called");
     // 2 buttons alert
     //alertMessage(comps[compId].name.toUpperCase(), schedules[scheduleId].id.toUpperCase());
     const curComps = [...this.state.comps];
     let cRow = {...curComps[compId]};
-    cRow.schedule = scheduleId;
-    curComps[compId] = cRow;
-    this.setState({comps: curComps});
+    // change state only if the requested schedule type is different
+    // from the current schedule type, otherwise do nothing :)
+    if (cRow.schedule !== scheduleId) {
+      cRow.schedule = scheduleId;
+      curComps[compId] = cRow;
+      this.setState({comps: curComps});
+      // cancel the currently running and run per the new schedule
+      const compName = cRow.name.toUpperCase();
+      const schedule = this.state.schedules[cRow.schedule].id;
+      Notifications.cancelNotification(compName);
+      setTimeout(() => Notifications.scheduleNotification(compName, schedule), 5*1000);
+    }
   };
 
   alertMessage = async (company, schedule) => {
-    console.log("Home::alertMessage() called");
+    console.log("INFO: Home::alertMessage() called");
     Alert.alert(
       "Alert",
       "You will receive updates on " + schedule + " basis for " + company,
       [
         {
           text: "Cancel",
-          onPress: () => console.log("Cancel pressed"),
+          onPress: () => console.log("INFO: Cancel pressed"),
           style: "cancel"
         },
         {
           text: "OK",
-          onPress: () => console.log("OK pressed"),
+          onPress: () => console.log("INFO: OK pressed"),
           style: "ok" // no such style :)
         },
       ],

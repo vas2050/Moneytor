@@ -11,12 +11,12 @@ import {
 
 export default class Settings extends Component {
   componentDidMount() {
-    console.log("Settings::componentDidMount() called");
+    console.log("INFO: Settings::componentDidMount() called");
     //nothing for now
   }
 
   componentWillUnmount() {
-    console.log("Settings::componentWillUnmount() called");
+    console.log("INFO: Settings::componentWillUnmount() called");
     // nothing for now
   }
 
