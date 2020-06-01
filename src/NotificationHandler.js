@@ -1,7 +1,8 @@
 import firebase from 'react-native-firebase';
 import { Alert } from 'react-native';
 
-import { createStoreItems, readStoreItems } from '../AppStorage';
+import { createStoreItems, readStoreItems } from './AppStorage';
+import * as RootNavigation from './NavigationHandler';
 
 let notificationOpenedListener;
 let notificationListener;
@@ -97,7 +98,7 @@ const storeNotification = async notification => {
   createStoreItems('NOTIFs', notif);
 };
 
-const createNotificationListeners = async () => {
+const createNotificationListeners = async (props) => {
   console.log("INFO: Notifications::Notifications::createNotificationListeners() called");
   // on receival of notification
   notificatonListener = firebase.notifications().onNotification(async notification => {
@@ -129,7 +130,7 @@ const createNotificationListeners = async () => {
     firebase.notifications().setBadge(--badgeCount);
     const { title, body } = notificationOpen.notification;
     console.log('INFO: notification opened for ' + notificationOpen.notification.notificationId);
-    Alert.alert(title, body)
+    RootNavigation.navigate('Notif', {});
   });
 
   // when app is closed 
@@ -245,5 +246,5 @@ export {
   createNotificationListeners,
   notificationOpenedListener,
   notificationListener,
-  messageListener
+  messageListener,
 }

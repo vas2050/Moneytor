@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 
 import RadioForm from 'react-native-simple-radio-button';
-import Notifications from './Notifications'; 
+import * as Notifications from './NotificationHandler'; 
 
 export default class Main extends Component {
   // define the state for various companies and default schedule: daily

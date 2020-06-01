@@ -73,11 +73,11 @@ const style = StyleSheet.create({
   },
   buttonView: {
     alignItems: "center",
-    padding: 6,
-    margin: 6,
+    padding: 8,
+    margin: 8,
     backgroundColor: null,
     borderRadius: 10,
-    borderWidth: 0,
+    borderWidth: 1,
     borderColor: "blue",
     borderStyle: "solid",
   },
@@ -90,7 +90,8 @@ const style = StyleSheet.create({
     fontVariant: ['small-caps']
   },
   note: {
-    marginBottom: 20,
+    marginTop: 50,
+    marginBottom: 10,
     color: "black",
     fontWeight: "bold",
     alignSelf: "center",

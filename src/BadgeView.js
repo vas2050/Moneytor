@@ -45,8 +45,8 @@ export default class BadgeCount extends Component {
 const style = StyleSheet.create({
   badgeView: {
     position: 'absolute',
-    right: -6,
-    top: -3,
+    right: -1,
+    top: -1,
     backgroundColor: 'red',
     borderRadius: 6,
     width: 12,

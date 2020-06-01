@@ -4,9 +4,10 @@
   <<>> and notified of rate when it hits the user-defined threshold value.
 **/
 
-import React, { Component } from 'react';
-import { createBottomTabNavigator } from 'react-navigation-tabs';
+import React, { Component, useEffect } from 'react';
+import { createMaterialTopTabNavigator } from 'react-navigation-tabs';
 import { createAppContainer } from 'react-navigation';
+import { Dimensions } from 'react-native';
 import Icon from 'react-native-ionicons';
 import {
   Platform,
@@ -19,10 +20,11 @@ import {
 
 import Home from './src/HomeView';
 import Notifs from './src/AlertView';
-import Settings from './src/Settings';
-import ContactUs from './src/ContactUs';
-import BadgeCount from './src/BadgeCount';
-import Notifications from './src/Notifications';
+import Settings from './src/SettingsView';
+import ContactUs from './src/ContactView';
+import BadgeCount from './src/BadgeView';
+import * as Notifications from './src/NotificationHandler';
+import { navigationRef, isMountedRef } from './src/NavigationHandler';
 
 const ContactScreen = () => {
   console.log("INFO: App::ContactScreen() called");
@@ -102,54 +104,74 @@ const RouteConfigs = {
   }
 };
 
+/*
+// not required now
+const NO_OF_TABS = Object.keys(RouteConfigs).length;
+const TAB_WIDTH = (Dimensions.get('window').width)/NO_OF_TABS;
+*/
+
 const BottomTabNavigatorConfig = {
-  animationEnabled: true,
   initialRouteName: 'Home',
   order: [ 'Home', 'Notif', 'Settings', 'Contact' ],
+  pressColor: "yellow",
   tabBarOptions: {
+    pressOpacity: 0.3,
+    upperCaseLabel: false,
+    //scrollEnabled: true,
+    showIcon: true,
     activeTintColor: 'blue',
     inactiveTintColor: 'gray',
+    swipeEnabled: true,
     //activeBackgroundColor: 'black',
     //inactiveBackgroundColor: 'gray',
+    tabStyle: {
+      //width: TAB_WIDTH,
+      height: 50
+    },
     style: {
       backgroundColor: 'lightyellow'
     },
     labelStyle: {
       fontVariant: ['small-caps'],
-      fontSize: 12
+      fontSize: 11,
     },
-    //tabStyle: {},
+    indicatorStyle: {
+      //borderTopColor: "red",
+      //borderTopWidth: 4,
+      backgroundColor: 'blue'
+    }
   },
+  tabBarPosition: 'bottom',
 };
 
-const TabNavigator = createBottomTabNavigator(RouteConfigs, BottomTabNavigatorConfig);
+const TabNavigator = createMaterialTopTabNavigator(RouteConfigs, BottomTabNavigatorConfig);
 const AppContainer = createAppContainer(TabNavigator);
 
-export default class App extends Component {
-  componentDidMount = () => {
+export default function App() {
+  useEffect(() => {
     console.log("INFO: App::componentDidMount() called");
-    // for Android devices, notification channel must be created
-    // and specified while posting a notification
     if (Platform.OS === "android") {
       Notifications.createNotificationChannel();
     }
 
-    // if permitted, add a notification listener
+    // to track when the App is mounted
+    isMountedRef.current = true;
+
     Notifications.checkPermission();
     Notifications.createNotificationListeners();
-  };
 
-  componentWillUnmount = () => {
-    console.log("INFO: App::componentWillUnmount() called");
-    Notifications.notificationListener = null;
-    Notifications.notificationOpenedListener = null;
-  };
+    // clean up
+    return () => {
+      console.log("INFO: App::componentWillUnmount() called");
+      isMountedRef.current = false;
+      Notifications.notificationListener = null;
+      Notifications.notificationOpenedListener = null;
+    }
+  }, []);
 
-  render() {
-    return (
-      <AppContainer />
-    )
-  }
+  return (
+    <AppContainer ref={navigationRef} />
+  )
 }
 
 const style = StyleSheet.create({
