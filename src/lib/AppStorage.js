@@ -1,29 +1,23 @@
 import AsyncStorage from '@react-native-community/async-storage';
 
-const readStoreItems = async (key) => {
-  console.log("INFO: AppStorage::readStoreItems() called");
-  let items = [];
+const readStoreItem = async (key) => {
+  console.log("INFO: AppStorage::readStoreItem() called");
+  let item;
   try {
     const json = await AsyncStorage.getItem(key);
     if (json) {
-      const item = JSON.parse(json);
-      if (Array.isArray(item)) {
-        items = items.concat(item);
-      }
-      else {
-        items.push(item);
-      }
+      item = JSON.parse(json);
     }
   }
   catch (error) {
     console.log(`ERROR: unable to retrieve ${key} from storage!`);
   }
 
-  return items;
+  return item;
 };
 
-const createStoreItems = async (key, items) => {
-  console.log("INFO: AppStorage::createStoreItems() called");
+const createStoreItem = async (key, items) => {
+  console.log("INFO: AppStorage::createStoreItem() called");
   AsyncStorage.setItem(key, JSON.stringify(items))
   .then(() => {
     console.log(`INFO: ${key} stored`);
@@ -38,15 +32,18 @@ const createStoreItems = async (key, items) => {
 const getUnreadCount = async (key) => {
   console.log("INFO: AppStorage::getUnreadCount() called");
   let count = 0;
-  const items = await readStoreItems(key);
-  if (items.length) {
-    items.forEach(item => { if (!item.read) ++count; });
+  const notif = await readStoreItem(key);
+  if (notif) {
+    const items = Object.keys(notif);
+    if (items.length) {
+      items.forEach(item => { if (!notif[item].read) ++count; });
+    }
   }
   return count;
 };
 
 export {
-  readStoreItems,
-  createStoreItems,
+  readStoreItem,
+  createStoreItem,
   getUnreadCount
 }

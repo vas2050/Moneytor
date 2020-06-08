@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { getUnreadCount } from './AppStorage';
+import { getUnreadCount } from '../lib/AppStorage';
 import {
   View,
   Text,
@@ -56,7 +56,7 @@ const style = StyleSheet.create({
   },
   badgeText: {
     color: 'white',
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: 'bold'
   }
 });

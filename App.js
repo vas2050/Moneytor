@@ -18,13 +18,13 @@ import {
   StyleSheet,
 } from 'react-native';
 
-import Home from './src/HomeView';
-import Notifs from './src/AlertView';
-import Settings from './src/SettingsView';
-import ContactUs from './src/ContactView';
-import BadgeCount from './src/BadgeView';
-import * as Notifications from './src/NotificationHandler';
-import { navigationRef, isMountedRef } from './src/NavigationHandler';
+import Home from './src/views/HomeView';
+import Notifs from './src/views/AlertView';
+import Settings from './src/views/SettingsView';
+import ContactUs from './src/views/ContactView';
+import BadgeCount from './src/views/BadgeView';
+import * as Notifications from './src/lib/NotificationHandler';
+import { navigationRef, isMountedRef } from './src/lib/NavigationHandler';
 
 const ContactScreen = () => {
   console.log("INFO: App::ContactScreen() called");
@@ -119,6 +119,7 @@ const BottomTabNavigatorConfig = {
     upperCaseLabel: false,
     //scrollEnabled: true,
     showIcon: true,
+    showLabel: false,
     activeTintColor: 'blue',
     inactiveTintColor: 'gray',
     swipeEnabled: true,

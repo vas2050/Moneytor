@@ -17,29 +17,36 @@ import {
 } from 'react-native';
 
 import RadioForm from 'react-native-simple-radio-button';
-import * as Notifications from './NotificationHandler'; 
+import * as companyConfig from '../config/CompanyConfig';
+import * as Notifications from '../lib/NotificationHandler'; 
+import { readStoreItem, createStoreItem } from '../lib/AppStorage'; 
+
+const schedules = companyConfig.schedules;
 
 export default class Main extends Component {
   // define the state for various companies and default schedule: daily
   // look up in the schedules with id: 1 for weekly
   state = {
-    comps: [
-      {id: 0, isOn: false, schedule: 1, name: 'xoom'},
-      {id: 1, isOn: false, schedule: 1, name: 'abc'},
-      {id: 2, isOn: false, schedule: 1, name: 'xyz'}
-    ],
-
-    // for the sake of look up, keeping id value as 'value'
-    schedules: [
-      {value: 0, label: ' '.repeat(4), id: 'daily'},
-      {value: 1, label: ' '.repeat(4), id: 'weekly'},
-      {value: 2, label: ' '.repeat(4), id: 'monthly'}
-    ]
+    comps: [],
   };
 
   componentDidMount = () => {
     console.log("INFO: Home::componentDidMount() called");
-    // nothing for now
+    this.setComps();
+  };
+
+  setComps = async () => {
+    console.log("INFO: Home::setComps() called");
+    let comps = await readStoreItem("COMPs");
+    if (!comps || !comps.length) {
+      comps = companyConfig.comps;
+    }
+    this.setState({comps});
+  };
+
+  componentWillUnmount = () => {
+    console.log("INFO: Home::componentWillUnmount() called");
+    createStoreItem('COMPs', this.state.comps);
   };
 
   // to be built soon - to show last 5 days statistics
@@ -56,7 +63,7 @@ export default class Main extends Component {
     const curComps = [...this.state.comps];
     let cRow = {...curComps[index]};
     const compName = cRow.name.toUpperCase();
-    const schedule = this.state.schedules[cRow.schedule].id;
+    const schedule = schedules[cRow.schedule].id;
 
     cRow.isOn = !cRow.isOn;
     curComps[index] = cRow;
@@ -101,7 +108,7 @@ export default class Main extends Component {
       this.setState({comps: curComps});
       // cancel the currently running and run per the new schedule
       const compName = cRow.name.toUpperCase();
-      const schedule = this.state.schedules[cRow.schedule].id;
+      const schedule = schedules[cRow.schedule].id;
       Notifications.cancelNotification(compName);
       setTimeout(() => Notifications.scheduleNotification(compName, schedule), 5*1000);
     }
@@ -134,7 +141,7 @@ export default class Main extends Component {
       <View style={style.container}>
         <View style={style.scheduleView}>
         {
-          this.state.schedules.map((rec, key) => {
+          schedules.map((rec, key) => {
             return (
               <Text key={key} style={style.scheduleItem}>{rec.id}</Text>
             )
@@ -165,9 +172,9 @@ export default class Main extends Component {
                   style={style.radioView}
                   formHorizontal={true}
                   //labelHorizontal={true}
-                  radio_props={this.state.schedules}
+                  radio_props={schedules}
                   disabled={rec.isOn ? false : true}
-                  initial={1}
+                  initial={rec.schedule}
                   onPress={(value) => this.handleRadio(rec.id, value)}
                   buttonSize={25}
                   buttonOuterSize={40}

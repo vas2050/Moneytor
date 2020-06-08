@@ -1,7 +1,7 @@
 import firebase from 'react-native-firebase';
 import { Alert } from 'react-native';
 
-import { createStoreItems, readStoreItems } from './AppStorage';
+import { createStoreItem, readStoreItem } from './AppStorage';
 import * as RootNavigation from './NavigationHandler';
 
 let notificationOpenedListener;
@@ -76,26 +76,32 @@ const requestPermission = async () => {
 // get token and store for future use
 const getToken = async () => {
   console.log("INFO: Notifications::Notifications::getToken() called");
-  let fcmToken = (await readStoreItems('FCMToken'))[0];
+  let fcmToken = await readStoreItem('FCMToken');
   if (!fcmToken) {
     fcmToken = await firebase.messaging().getToken();
     if (fcmToken) {
       console.log("INFO: FCM Token obtained: ", fcmToken);
-      createStoreItems('FCMToken', fcmToken)
+      createStoreItem('FCMToken', fcmToken)
     }
   }
   return fcmToken;
 };
 
-const storeNotification = async notification => {
+const storeNotification = async message => {
   console.log("INFO: Notifications::Notifications::storeNotification() called");
-  let notif = await readStoreItems('NOTIFs');
-  if (notif.length >= 10) { // store only last 5 notifications
-    notif.splice(9); // take of older ones
+  const notif = await readStoreItem('NOTIFs');
+  let obj = {};
+  if (notif) {
+    let items = Object.keys(notif);
+    if (items && items.length >= 20) { // store only last 20 notifications
+      items.sort((a,b) => b-a);
+      items = items.slice(0,19); // take latest 19 items
+    }
+    items.forEach(item => obj[item] = notif[item]);
   }
 
-  notif.push(notification);
-  createStoreItems('NOTIFs', notif);
+  obj[message.id] = message; // 20th item
+  createStoreItem('NOTIFs', obj);
 };
 
 const createNotificationListeners = async (props) => {
@@ -109,9 +115,11 @@ const createNotificationListeners = async (props) => {
     .setTitle(title)
     .setBody(body);
 
-    let date = new Date;
-    date = date.toLocaleString();
-    storeNotification({notificationId, title, body, date});
+    const d = new Date;
+    const date = d.toDateString();
+    const time = d.toLocaleTimeString();
+    const epoch = Math.round(d/1000);
+    storeNotification({id: epoch, notificationId, title, body, date, time});
 
     // display notification
     firebase.notifications()
@@ -151,7 +159,7 @@ const scheduleNotification = async (name, schedule) => {
   let secondsToAdd;
   let repeatInterval;
  
-  schedule = 'minute'; // for testing
+  schedule = 'hourly'; // for testing
   switch(schedule) {
     case 'daily':
       secondsToAdd = 24*60*60;
@@ -166,8 +174,8 @@ const scheduleNotification = async (name, schedule) => {
       repeatInterval = 'month';
       break;
     default:
-      secondsToAdd = 60;
-      repeatInterval = 'minute';
+      secondsToAdd = 60*60;
+      repeatInterval = 'hour';
   }
 
   const date = new Date();
