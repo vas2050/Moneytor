@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import firebase from 'react-native-firebase';
 import {
   Alert,
   View,
@@ -16,7 +17,8 @@ export default class AlertView extends Component {
   };
 
   getNotifications = async () => {
-    console.log("INFO: Notif::getNotifications() called");
+    console.log("INFO: Alerts::getNotifications() called");
+
     const notif = await readStoreItem('NOTIFs');
     if (notif) {
       const items = Object.keys(notif);
@@ -28,18 +30,20 @@ export default class AlertView extends Component {
   };
 
   componentDidMount = () => {
-    console.log("INFO: Notif::componentDidMount() called");
+    console.log("INFO: Alerts::componentDidMount() called");
     this.getNotifications();
   };
 
   handlePress = async (id) => {
-    console.log("INFO: Notif::handlePress() called");
+    console.log("INFO: Alerts::handlePress() called");
     let { notif } = this.state;
     if (notif[id]) {
       if (notif[id].read !== true) { // set only if state is different
         notif[id].read = true; // mark this item as read
         this.setState({notif});
         createStoreItem('NOTIFs', notif);
+        let badgeCount = await firebase.notifications().getBadge();
+        firebase.notifications().setBadge(--badgeCount);
       }
       Alert.alert(notif[id].title, notif[id].body, [{text: 'Close', style: 'cancel'}]);
     }
@@ -96,7 +100,6 @@ export default class AlertView extends Component {
 
 const style = StyleSheet.create({
   container: {
-    backgroundColor: "white",
     flex: 1,
     justifyContent: "center",
     alignItems: "center",

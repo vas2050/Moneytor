@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { Dropdown } from 'react-native-material-dropdown'; 
-import Slider from '@react-native-community/slider'; 
 import {
   Alert,
   View,
@@ -9,7 +8,7 @@ import {
   Button,
   StyleSheet,
   TouchableOpacity,
-  TouchableHighlight,
+  TouchableHighlight
 } from 'react-native';
 
 import { fromCurrency, toCurrency, symbols } from '../config/CurrencyList';
@@ -49,7 +48,7 @@ export default class Settings extends Component {
     to_currency = to_currency || 0;
     from_currency = from_currency || 0;
     let send_amount = await readStoreItem("SEND_AMOUNT");
-    send_amount = send_amount || 2000;
+    send_amount = send_amount || "2000";
     this.setState({ min_limit, max_limit, to_currency, from_currency, send_amount });
   };
 
@@ -63,12 +62,6 @@ export default class Settings extends Component {
     console.log("INFO: Settings::handleLimitChange() called");
     this.setState({[param]: value});
     createStoreItem(param.toUpperCase(), value);
-  };
-
-  // for tracking purpose, don't store
-  handleChange = (param, value) => {
-    console.log("INFO: Settings::handleChange() called");
-    this.setState({[param]: value});
   };
 
   render() {
@@ -108,20 +101,12 @@ export default class Settings extends Component {
             <Text style={style.text}>Amount (to calculate the Rate for):</Text>
             <View style={style.limit}>
               <Text style={style.textLimit}>{symbols[fromCurrency[this.state.from_currency].code]}</Text>
-              <Text style={style.text}>{this.state.send_amount}</Text>
-              <Slider
-                disabled={true}
-                step={50}
-                minimumValue={50}
-                minimumTrackTintColor="green"
-                maximumValue={9999}
-                maximumTrackTintColor="gray"
-                thumbTintColor="blue"
+              <TextInput
+                keyboardType="numeric"
+                style={style.textInput}
+                maxLength={4}
                 value={this.state.send_amount}
-                onSlidingComplete={value => this.handleLimitChange('send_amount', value)}
-                onValueChange={value => this.handleChange('send_amount', value)}
-                style={style.slider}
-                useNativeDriver={true}
+                onChangeText={value => this.handleLimitChange('send_amount', value)}
               />
             </View>
           </View>
@@ -133,8 +118,6 @@ export default class Settings extends Component {
                 keyboardType="numeric"
                 style={style.textInput}
                 maxLength={7}
-                autoGrow={true}
-                maxHeight={50}
                 value={this.state.min_limit}
                 onChangeText={value => this.handleLimitChange('min_limit', value)}
               />
@@ -161,6 +144,7 @@ const style = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: "column",
+    backgroundColor: "white",
     justifyContent: "center",
     alignItems: "flex-start",
     margin: 30,
@@ -210,11 +194,5 @@ const style = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 20,
     marginRight: 10,
-  },
-  slider: {
-    width: 240,
-    height: 50,
-    borderBottomWidth: 2,
-    marginTop: 30,
-  },
+  }
 });

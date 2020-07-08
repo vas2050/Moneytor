@@ -6,16 +6,6 @@
 
 import React, { Component } from 'react';
 import {
-  playButtonPress,
-  playRadioPress,
-  playSwitchToggle,
-  playAlert,
-  playSpinner,
-} from '../lib/PlayAudio';
-
-import * as Progress from 'react-native-progress';
-import { BlurView } from '@react-native-community/blur';
-import {
   Platform,
   Alert,
   View,
@@ -27,8 +17,8 @@ import {
   Switch
 } from 'react-native';
 
-import { getFxRateLight } from '../lib/FxRateLight';
-import { getCountry } from '../lib/CountryData';
+import { getFxRate } from '../lib/FxRateAPI';
+import { fromCurrency, toCurrency, symbols } from '../config/CurrencyList';
 import RadioForm from 'react-native-simple-radio-button';
 import * as companyConfig from '../config/CompanyList';
 import * as Notifications from '../lib/NotificationHandler'; 
@@ -42,7 +32,10 @@ export default class Main extends Component {
 
   state = {
     comps: [],
-    isLoading: false,
+    from_currency: null,
+    to_currency: null,
+    sendAmount: null,
+    isLoading: false
   };
 
   componentDidMount = () => {
@@ -64,36 +57,48 @@ export default class Main extends Component {
     createStoreItem('COMPs', this.state.comps);
   };
 
+  setCurrency = async () => {
+    console.log("INFO: Home::setCurrency() called");
+
+    let to_currency = await readStoreItem("TO_CURRENCY");
+    to_currency = to_currency || 0;
+
+    let from_currency = await readStoreItem("FROM_CURRENCY")
+    from_currency = from_currency || 0;
+
+    let sendAmount = await readStoreItem("SEND_AMOUNT")
+    sendAmount = Number(sendAmount) || 2000;
+
+    this.setState({to_currency, from_currency, sendAmount});
+  };
+
   // to be built soon - to show last 5 days statistics
   handleButton = async index => {
     console.log("INFO: Home::handleButton() called");
+
+    await this.setCurrency();
 
     this.setState({isLoading: true});
     const item = {...this.state.comps[index]};
     const isOn = item.isOn ? "Switched ON" : "Switched OFF";
     //alert(item.name + ": " + isOn);
 
-    let countryObj = null;
-    try {
-      countryObj = await getCountry();
-    }
-    catch(err) {
-      console.log("ERROR: unable to getCountry()");
-      Alert.alert("Error", "Unable to fetch currency details");
-      return false;
-    }
+    const dCurrencyCode = toCurrency[this.state.to_currency].label; 
+    const dCountryCode = toCurrency[this.state.to_currency].code;
+    const dCurrencySign = symbols[dCountryCode];
 
-    const { dCurrencySign, sCountryCode, sCurrencySign, sendAmount } = countryObj;
-    getFxRateLight(item.name, countryObj)
+    const sCurrencyCode = fromCurrency[this.state.from_currency].label; 
+    const sCountryCode = fromCurrency[this.state.from_currency].code;
+    const sCurrencySign = symbols[sCountryCode];
+
+    const { sendAmount } = this.state;
+    getFxRate(item.name, {sCountryCode, sCurrencyCode, dCountryCode, dCurrencyCode, sendAmount})
     .then(rate => {
-      playAlert();
       Alert.alert(`${dCurrencySign} ${rate} \u2190` + item.name.toUpperCase(),
                     `***calculated for ${sCountryCode}${sCurrencySign} ${sendAmount}`);
       this.setState({isLoading: false});
     })
     .catch(err => {
-      console.log("ERROR: ", err);
-      playAlert();
       if (err === 'timeout') {
         Alert.alert("Error", "Sorry, request timed out!");
       }
@@ -107,7 +112,6 @@ export default class Main extends Component {
   // save state of switch
   handleSwitch = async index => {
     console.log("INFO: Home::handleSwitch() called");
-
     const curComps = [...this.state.comps];
     let cRow = {...curComps[index]};
     const compName = cRow.name.toUpperCase();
@@ -126,7 +130,6 @@ export default class Main extends Component {
         this.setState({comps: curComps});
       }
       else {
-        playAlert();
         alert("You need to turn on notifications for the app to notify you regularly!");
       }
     }
@@ -145,7 +148,6 @@ export default class Main extends Component {
   // save state of schedule
   handleRadio = async (compId, scheduleId) => {
     console.log("INFO: Home::handleRadio() called");
-
     // 2 buttons alert
     //alertMessage(comps[compId].name.toUpperCase(), schedules[scheduleId].id.toUpperCase());
     const curComps = [...this.state.comps];
@@ -166,7 +168,6 @@ export default class Main extends Component {
 
   alertMessage = async (company, schedule) => {
     console.log("INFO: Home::alertMessage() called");
-    playAlert();
     Alert.alert(
       "Alert",
       "You will receive updates on " + schedule + " basis for " + company,
@@ -188,7 +189,13 @@ export default class Main extends Component {
 
   render() {
     return (
-      <View style={style.container}>
+      <View style={style.container} pointerEvents={ this.state.isLoading ? "none" : 'auto' }>
+        <ActivityIndicator // load status, spinner
+          style={style.spinner}
+          animating={this.state.isLoading}
+          size="large"
+          color="blue"
+        />
         <View style={style.scheduleView}>
         {
           schedules.map((rec, key) => {
@@ -205,18 +212,16 @@ export default class Main extends Component {
                 <Switch
                   width="50"
                   style={style.switchItem}
-                  trackColor={{false: "gray", true: "green"}}
-                  thumbColor="white"
+                  trackColor={{false: "#949494", true: "#949494" }}
+                  thumbColor={rec.isOn ? "green" : "white"}
                   value={rec.isOn}
-                  onValueChange={() => {playSwitchToggle(); this.handleSwitch(key)}}
-                  ios_backgroundColor="gray" // trackColor for iOS to work
-                  useNativeDriver={true}
+                  onValueChange={() => this.handleSwitch(key)}
+                  ios_backgroundColor="#949494" // trackColor for iOS to work
                 />
                 <TouchableOpacity
                   style={style.buttonView}
-                  onPress={() => {playButtonPress(); this.handleButton(key)}}
+                  onPress={() => this.handleButton(key)}
                   activeOpacity={.2}
-                  useNativeDriver={true}
                 >
                   <Text style={style.buttonItem}>{rec.name}</Text>
                 </TouchableOpacity>
@@ -227,13 +232,12 @@ export default class Main extends Component {
                   radio_props={schedules}
                   disabled={rec.isOn ? false : true}
                   initial={rec.schedule}
-                  onPress={value => {playRadioPress(); this.handleRadio(rec.id, value)}}
+                  onPress={(value) => this.handleRadio(rec.id, value)}
                   buttonSize={25}
                   buttonOuterSize={40}
                   selectedButtonColor={rec.isOn ? 'green' : 'gray'}
                   buttonColor="gray"
                   animation={true}
-                  useNativeDriver={true}
                   //buttonStyle={style.radioItem}
                   //buttonWrapStyle={{marginLeft: 20}}
                   //selectedLabelColor={'green'}
@@ -243,33 +247,6 @@ export default class Main extends Component {
             )
           })
         }
-        { 
-          this.state.isLoading &&
-            <BlurView
-              style={{left:0, right:0, top: 0, bottom: 0, position: "absolute"}}
-              reducedTransparencyFallbackColor="white"
-              blurType="light"
-              blurAmount={5}
-            />
-
-        }
-        {
-          this.state.isLoading &&
-            <Progress.Circle // request in progress, spinner
-              progress={.5}
-              color="blue"
-              unfilledColor="white"
-              fill="green"
-              borderColor="red"
-              thickness={10}
-              borderWidth={4}
-              indeterminate={true}
-              style={style.spinner}
-              size={90}
-              endAngle={.9}
-              strokeCap="butt"
-            />
-        }
       </View>
     );
   }
@@ -277,6 +254,7 @@ export default class Main extends Component {
 
 const style = StyleSheet.create({
   container: {
+    backgroundColor: "white",
     flex: 1,
     justifyContent: "center",
     alignItems: "flex-start",
@@ -293,7 +271,7 @@ const style = StyleSheet.create({
     borderBottomColor: "green",
     borderBottomWidth: 2,
     margin: 40,
-   width: "90%"
+    width: "90%"
   },
   buttonView: {
     padding: 5,
@@ -324,7 +302,7 @@ const style = StyleSheet.create({
     color: "black",
     textAlign: "left",
     marginBottom: 3,
-    marginLeft: 14,
+    marginLeft: 10,
     //fontVariant: ['small-caps']
     fontWeight: "bold",
     textTransform: "capitalize"
@@ -344,6 +322,6 @@ const style = StyleSheet.create({
   spinner: {
     alignSelf: "center",
     position: "absolute",
-    //transform: [{scaleX: 2.0}, {scaleY: 2.0}]
+    transform: [{scaleX: 2.0}, {scaleY: 2.0}]
   }
 });

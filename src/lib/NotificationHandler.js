@@ -1,12 +1,17 @@
 import firebase from 'react-native-firebase';
+import events from 'events';
 import { Alert } from 'react-native';
 
-import { createStoreItem, readStoreItem } from './AppStorage';
+import { createStoreItem, readStoreItem, removeStoreItem } from './AppStorage';
 import * as RootNavigation from './NavigationHandler';
+import { getFxRateLight } from '../lib/FxRateLight';
+import { getCountry } from '../lib/CountryData';
 
 let notificationOpenedListener;
 let notificationListener;
 let messageListener;
+
+const eventEmitter = events.EventEmitter();
 
 const createNotificationChannel = () => {
   console.log("INFO: Notifications::Notifications::createNotificationChannel() called");
@@ -121,6 +126,13 @@ const createNotificationListeners = async (props) => {
     const epoch = Math.round(d/1000);
     storeNotification({id: epoch, notificationId, title, body, date, time});
 
+    // no need to increase if already 20 as we show only two maximum
+    if (badgeCount < 20) {
+      firebase.notifications().setBadge(++badgeCount);
+    }
+
+    console.log("emit", eventEmitter.emit("updateBadge"));
+
     // display notification
     firebase.notifications()
     .displayNotification(localNotification)
@@ -128,17 +140,15 @@ const createNotificationListeners = async (props) => {
       console.log("INFO: notification displayed for " + notificationId);
     })
     .catch(error => console.log("ERROR: notification display: ", error));
-
-    //firebase.notifications().setBadge(++badgeCount);
   });
 
   // when a notification is opened...
   notificationOpenedListener = firebase.notifications().onNotificationOpened(async notificationOpen => {
     let badgeCount = await firebase.notifications().getBadge();
     firebase.notifications().setBadge(--badgeCount);
-    const { title, body } = notificationOpen.notification;
+    //const { title, body } = notificationOpen.notification;
     console.log('INFO: notification opened for ' + notificationOpen.notification.notificationId);
-    RootNavigation.navigate('Notif', {});
+    RootNavigation.navigate('Alerts', { t: "342"});
   });
 
   // when app is closed 
@@ -154,50 +164,64 @@ const createNotificationListeners = async (props) => {
   });
 };
 
-const scheduleNotification = async (name, schedule) => {
-  console.log("INFO: Notifications::Notifications::scheduleNotification() called");
-  let secondsToAdd;
-  let repeatInterval;
- 
-  schedule = 'hourly'; // for testing
-  switch(schedule) {
-    case 'daily':
-      secondsToAdd = 24*60*60;
-      repeatInterval = 'day';
-      break;
-    case 'weekly':
-      secondsToAdd = 7*24*60*60;
-      repeatInterval = 'week';
-      break;
-    case 'monthly':
-      secondsToAdd = 4*7*24*60*60;
-      repeatInterval = 'month';
-      break;
-    default:
-      secondsToAdd = 60*60;
-      repeatInterval = 'hour';
-  }
-
+const runSchedule = async (name, schedule) => {
+  console.log("INFO: Notifications::Notifications::runSchedule() called");
   const date = new Date();
-  date.setSeconds(date.getSeconds() + secondsToAdd);
+  const fireDate = date.getTime() + 4000; // delay 4s
 
-  const fireDate = date.toISOString();
-
-  // schedule it
+  // schedule it, run only once, not repeatedly due to value: "0"
   firebase
   .notifications()
-  .scheduleNotification(_buildNotification(name), {fireDate, repeatInterval, exact: true})
+  .scheduleNotification(await _buildNotification(name), {fireDate, repeatInterval: "0", exact: true})
   .then((sched) => {
     console.log(`INFO: ${name} scheduled for ${schedule}`);
+    return true;
   })
   .catch(error => {
-    console.log(`ERROR: scheduling ${name} for ${schedule} failed`);
     console.log(error);
+    console.log(`ERROR: scheduling ${name} for ${schedule} failed`);
+    return false;
   });
 };
 
-const cancelNotification = async (id) => {
+const scheduleNotification = async (name, schedule) => {
+  console.log("INFO: Notifications::Notifications::scheduleNotification() called");
+  const key = "TIMER_ID_" + name.toUpperCase();
+  schedule = 'minly'; // for testing
+  let timeToWait = 60; // ms
+  switch(schedule) {
+    case 'daily':
+      timeToWait = 24*60*60;
+      break;
+    case 'weekly':
+      timeToWait = 7*24*60*60;
+      break;
+    case 'monthly':
+      timeToWait = 4*7*24*60*60;
+      break;
+    default:
+      timeToWait = 60;
+  }
+  timeToWait *= 1000; // to seconds
+  const timerId = setInterval(() => runSchedule(name, schedule), timeToWait);
+  if (timerId) {
+    console.log("INFO: timer id to store: " + timerId);
+    createStoreItem(key, timerId);
+  }
+};
+
+const cancelNotification = async (name) => {
   console.log("INFO: Notifications::Notifications::cancelNotification() called");
+  const key = "TIMER_ID_" + name.toUpperCase();
+  const timerId = await readStoreItem(key);
+  if (timerId) {
+    console.log("INFO: timer id to remove: " + timerId);
+    console.log("INFO: notification canceled for " + name);
+    clearInterval(timerId);
+    await removeStoreItem(key);
+  }
+
+  /*
   firebase
   .notifications()
   .cancelNotification(id)
@@ -208,40 +232,53 @@ const cancelNotification = async (id) => {
     console.log("ERROR: failed to cancel notification for " + id);
     console.log(error);
   });
+  */
 };
 
-const _buildNotification = (name) => {
+const _buildNotification = async (name) => {
   console.log("INFO: Notifications::Notifications::_buildNotification() called");
   //const title = (Platform.OS === "android") ? "Android Updates" : "Apple Updates";
-  const title = `Rate updates for ${name}`;
-  const body = `The current xchange rate from ${name}: 1 USD = XX INR`;
-
-  // create a new instance
-  let notification;
+  const countryObj = await getCountry();
+  let fxRate = null;
   try {
-    notification = 
-      new firebase
-        .notifications
-        .Notification()
-        .setNotificationId(name)
-        .setTitle(title)
-        .setBody(body);
-          /*
-          .android.setPriority(firebase.notifications.Android.priority.High)
-          .android.setChannelId("updates")
-          .android.setAutoCancel(true);
-          */
-
-    console.log("INFO: notification built for " + name);
+    fxRate = await getFxRateLight(name, countryObj); 
   }
-  catch (error) {
-    console.log("ERROR: building notification failed for " + name);
-    console.log(error);
-
-    return false;
+  catch(err) {
+    console.log("ERROR: ", err);
+    console.log("ERROR: unable to fetch fxRate");
   }
 
-  return notification;
+  if (fxRate) {
+    const title = `Fx Rate updates for ${name}`;
+    const { sCountryCode, sCurrencySign, dCurrencySign } = countryObj;
+    const body = `The current xchange rate (${name}): ${sCountryCode}${sCurrencySign} 1.00 = ${dCurrencySign} ${fxRate}`;
+
+    // create a new instance
+    let notification = null;
+    try {
+      notification = 
+        new firebase
+          .notifications
+          .Notification()
+          .setNotificationId(name)
+          .setTitle(title)
+          .setBody(body);
+            /*
+            .android.setPriority(firebase.notifications.Android.priority.High)
+            .android.setChannelId("updates")
+            .android.setAutoCancel(true);
+            */
+
+      console.log("INFO: notification built for " + name);
+    }
+    catch (error) {
+      console.log("ERROR: building notification failed for " + name);
+      console.log(error);
+
+      return false;
+    }
+    return notification;
+  }
 };
 
 export {

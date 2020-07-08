@@ -4,7 +4,7 @@
   <<>> and notified of rate when it hits the user-defined threshold value.
 **/
 
-import React, { Component, useEffect } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import { createMaterialTopTabNavigator } from 'react-navigation-tabs';
 import { createAppContainer } from 'react-navigation';
 import { Dimensions } from 'react-native';
@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 
 import Home from './src/views/HomeView';
-import Notifs from './src/views/AlertView';
+import Alerts from './src/views/AlertView';
 import Settings from './src/views/SettingsView';
 import ContactUs from './src/views/ContactView';
 import BadgeCount from './src/views/BadgeView';
@@ -48,12 +48,12 @@ const AlertScreen = () => {
   console.log("INFO: App::AlertScreen() called");
   return (
     <ScrollView contentContainerStyle={style.scrollView}>
-      <Notifs />
+      <Alerts />
     </ScrollView>
   );
 };
 
-const HomeScreen = () => {
+const HomeScreen = (props) => {
   console.log("INFO: App::HomeScreen() called");
   return (
     <ScrollView contentContainerStyle={style.scrollView}>
@@ -72,7 +72,7 @@ const RouteConfigs = {
       )
     }
   },
-  Notif: {
+  Alerts: {
     screen: AlertScreen,
     navigationOptions: {
       tabBarLabel: 'Alerts',
@@ -87,7 +87,7 @@ const RouteConfigs = {
   Contact: {
     screen: ContactScreen,
     navigationOptions: {
-      tabBarLabel: 'Contact Us',
+      tabBarLabel: 'Contact',
       tabBarIcon: ({ tintColor }) => (
         <Icon name="ios-mail" color={tintColor} size={25} />
       )
@@ -112,14 +112,14 @@ const TAB_WIDTH = (Dimensions.get('window').width)/NO_OF_TABS;
 
 const BottomTabNavigatorConfig = {
   initialRouteName: 'Home',
-  order: [ 'Home', 'Notif', 'Settings', 'Contact' ],
+  order: [ 'Home', 'Settings', 'Alerts', 'Contact' ],
   pressColor: "yellow",
   tabBarOptions: {
     pressOpacity: 0.3,
     upperCaseLabel: false,
     //scrollEnabled: true,
     showIcon: true,
-    showLabel: false,
+    showLabel: true,
     activeTintColor: 'blue',
     inactiveTintColor: 'gray',
     swipeEnabled: true,
@@ -130,11 +130,14 @@ const BottomTabNavigatorConfig = {
       height: 50
     },
     style: {
+      borderTopWidth: 1,
+      borderColor: "red",
       backgroundColor: 'lightyellow'
     },
     labelStyle: {
-      fontVariant: ['small-caps'],
+      //fontVariant: ['small-caps'],
       fontSize: 11,
+      color: "gray",
     },
     indicatorStyle: {
       //borderTopColor: "red",
@@ -149,6 +152,8 @@ const TabNavigator = createMaterialTopTabNavigator(RouteConfigs, BottomTabNaviga
 const AppContainer = createAppContainer(TabNavigator);
 
 export default function App() {
+  const [hello, setHello] = useState(0);
+
   useEffect(() => {
     console.log("INFO: App::componentDidMount() called");
     if (Platform.OS === "android") {
@@ -207,8 +212,13 @@ const style = StyleSheet.create({
   scrollView: {
     flexGrow: 1,
     justifyContent: "center",
-    borderColor: 'maroon',
-    borderWidth: 0,
+    borderColor: 'red',
+    borderRightWidth: .5,
+    borderLeftWidth: .5,
+    borderBottomWidth: 0,
+    borderTopWidth: 30,
+    borderTopColor: "lightyellow",
+    backgroundColor: "white",
     alignItems: "center"
   }
 });

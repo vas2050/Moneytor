@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
-import { getUnreadCount } from '../lib/AppStorage';
+import events from 'events';
+import firebase from 'react-native-firebase';
+import { getUnreadCount, createStoreItem } from '../lib/AppStorage';
 import {
   View,
   Text,
   StyleSheet,
 } from 'react-native';
-
 
 export default class BadgeCount extends Component {
   state = {
@@ -15,12 +16,21 @@ export default class BadgeCount extends Component {
   getBadgeCount = async () => {
     console.log("INFO: BadgeCount::getBadgeCount() called");
     const badgeCount = await getUnreadCount('NOTIFs');
+    //let badgeCount = await firebase.notifications().getBadge();
     this.setState({badgeCount});
   };
 
   componentDidMount = () => {
     console.log("INFO: BadgeCount::componentDidMount() called");
-    this.getBadgeCount();
+
+    //assign the event handler to an event
+    const eventEmitter = new events.EventEmitter();
+    createStoreItem("events", eventEmitter);
+    console.log("event: ", eventEmitter);
+    eventEmitter.on("updateBadge", this.getBadgeCount);
+    console.log("emit: ", eventEmitter.emit("updateBadge"));
+
+    //this.getBadgeCount();
   };
 
   componentWillUnmount = () => {

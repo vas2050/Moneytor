@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { playSubmitPress, playAlert } from '../lib/PlayAudio';
 import {
   Alert,
   View,
@@ -8,7 +9,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   TouchableOpacity,
-  TouchableHighlight
+  //TouchableHighlight
 } from 'react-native';
 
 import { Dropdown } from 'react-native-material-dropdown';
@@ -17,9 +18,9 @@ import * as RootNavigation from '../lib/NavigationHandler'
 
 const feedback_types = [
   {value: 0, label: 'Choose one'},
-  {value: 1, label: 'Comment'},
+  {value: 1, label: 'Problem'},
   {value: 2, label: 'Request'},
-  {value: 3, label: 'Problem'},
+  {value: 3, label: 'Comment'},
   {value: 4, label: 'Suggestion'}
 ];
 
@@ -59,25 +60,27 @@ export default class ContactUs extends Component {
     });
   };
 
+  alertUp = (title, message, stat=false) => {
+    playAlert();
+    Alert.alert(title, message);
+    return stat;
+  };
+
   validate = () => {
     if (this.state.name_error) {
-      Alert.alert("Error", "Name is either empty or too short!");
-      return false;
+      return this.alertUp("Error", "Name is either blank or too short!");
     }
 
     if (this.state.email_error) {
-      Alert.alert("Error", "Invalid email address!");
-      return false;
+      return this.alertUp("Error", "Invalid email address!");
     }
 
     if (this.state.feedback_error) {
-      Alert.alert("Error", "Invalid feedback type!");
-      return false;
+      return this.alertUp("Error", "Invalid feedback type!");
     }
 
     if (this.state.message_error) {
-      Alert.alert("Error", "Message is too short!");
-      return false;
+      return this.alertUp("Error", "Message is too short!");
     }
 
     return true;
@@ -95,12 +98,13 @@ export default class ContactUs extends Component {
       };
 
       if (sendEmail(params)) {
-        Alert.alert("Thank You!", "Your feedback is much appreciated!");
+        playSubmitPress();
+        this.alertUp("Thank You!", "Your feedback is much appreciated!", true);
         this.resetForm();
         RootNavigation.navigate('Home', {});
       }
       else {
-        Alert.alert("Error", "Unable to submit your feedback!");
+        return this.alertUp("Error", "Unable to submit your feedback!");
       }
     }
   };
@@ -197,9 +201,10 @@ export default class ContactUs extends Component {
         />
         <Text style={style.note}>* Maximum: 550 characters, Minimum: 10.</Text>
         <TouchableOpacity
+          underlayColor="green"
           style={style.buttonView}
           onPress={this.handleEmail}
-          activeOpacity={0.2}
+          activeOpacity={.1}
         >
           <Text style={style.buttonItem}>Send</Text>
         </TouchableOpacity>
@@ -214,20 +219,21 @@ const style = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "white",
     margin: 0,
   },
   buttonView: {
     justifyContent: "center",
-    padding: 3,
+    padding: 0,
     margin: 30,
-    borderColor: "black",
+    borderColor: "blue",
     backgroundColor: "white",
     borderRadius: 10,
-    borderWidth: 2,
+    borderWidth: 3,
+    width: 120,
+    //height: 60,
   },
   buttonItem: {
-    margin: 10,
+    margin: 15,
     fontSize: 20,
     fontWeight: "bold",
     color: "blue",

@@ -42,8 +42,22 @@ const getUnreadCount = async (key) => {
   return count;
 };
 
+const removeStoreItem = async (key) => {
+  console.log("INFO: AppStorage::removeStoreItem() called");
+  AsyncStorage.removeItem(key)
+  .then(() => {
+    console.log(`INFO: ${key} removed`);
+    return true;
+  })
+  .catch(err => {
+    console.log(`ERROR: unable to remove ${key}`);
+    return false;
+  });
+};
+
 export {
   readStoreItem,
   createStoreItem,
+  removeStoreItem,
   getUnreadCount
 }
