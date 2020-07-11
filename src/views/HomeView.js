@@ -43,11 +43,51 @@ export default class Main extends Component {
   state = {
     comps: [],
     isLoading: false,
+    to: null,
+    from: null,
+    sendAmount: null,
   };
 
   componentDidMount = () => {
     console.log("INFO: Home::componentDidMount() called");
+    const { to, from, sendAmount, navigation } = this.props; // first time, default values come from App
+    this.setState({to, from, sendAmount});
+    Notifications.updateDefaults({to, from, sendAmount, navigation}); // initial set up
     this.setComps();
+  };
+
+  componentDidUpdate = (prevProps, prevState) => {
+    const {from, to, sendAmount} = this.props;
+    let changed = false;
+    if (from !== undefined && from !== this.state.from) {
+      console.log("FROM being set");
+      this.setState({from});
+      changed = true;
+    }
+    if (to !== undefined && to !== this.state.to) {
+      console.log("TO being set");
+      this.setState({to});
+      changed = true;
+    }
+    if (sendAmount !== undefined && sendAmount !== this.state.sendAmount) {
+      console.log("SENDAMOUNT being set");
+      this.setState({sendAmount});
+      changed = true;
+    }
+    // update notification module too, so running schedules will consume the change 
+    // only if needed
+    if (changed) { 
+      Notifications.updateDefaults({to, from, sendAmount});
+    }
+  };
+
+  SAFE_componentWillMount = () => {
+    console.log("INFO: Home::componentWillMount() called");
+  };
+
+  componentWillUnmount = () => {
+    console.log("INFO: Home::componentWillUnmount() called");
+    createStoreItem('COMPs', this.state.comps);
   };
 
   setComps = async () => {
@@ -59,23 +99,19 @@ export default class Main extends Component {
     this.setState({comps});
   };
 
-  componentWillUnmount = () => {
-    console.log("INFO: Home::componentWillUnmount() called");
-    createStoreItem('COMPs', this.state.comps);
-  };
-
   // to be built soon - to show last 5 days statistics
   handleButton = async index => {
     console.log("INFO: Home::handleButton() called");
 
     this.setState({isLoading: true});
     const item = {...this.state.comps[index]};
-    const isOn = item.isOn ? "Switched ON" : "Switched OFF";
+    //const isOn = item.isOn ? "Switched ON" : "Switched OFF";
     //alert(item.name + ": " + isOn);
 
+    const { to, from, sendAmount } = this.state;
     let countryObj = null;
     try {
-      countryObj = await getCountry();
+      countryObj = await getCountry(to, from);
     }
     catch(err) {
       console.log("ERROR: unable to getCountry()");
@@ -83,8 +119,8 @@ export default class Main extends Component {
       return false;
     }
 
-    const { dCurrencySign, sCountryCode, sCurrencySign, sendAmount } = countryObj;
-    getFxRateLight(item.name, countryObj)
+    const { dCurrencySign, sCountryCode, sCurrencySign } = countryObj;
+    getFxRateLight(item.name, {...countryObj, sendAmount})
     .then(rate => {
       playAlert();
       Alert.alert(`${dCurrencySign} ${rate} \u2190` + item.name.toUpperCase(),
@@ -122,6 +158,7 @@ export default class Main extends Component {
       // in case user did change settings outside the app
       // so we better not save the state of hasPermission in the main program
       if (await Notifications.checkPermission()) {
+        const {to, from, sendAmount} = this.state;
         Notifications.scheduleNotification(compName, schedule);
         this.setState({comps: curComps});
       }

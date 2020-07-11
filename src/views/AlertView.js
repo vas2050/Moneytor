@@ -27,6 +27,7 @@ export default class AlertView extends Component {
         this.setState({notif, note});
       }
     }
+    //await this.props.greet("Ash")
   };
 
   componentDidMount = () => {

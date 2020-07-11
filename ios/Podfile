@@ -46,6 +46,7 @@ end
 
 target 'moneytor' do
   # Pods for moneytor
+  pod 'ReactNativeART', :path => '../node_modules/@react-native-community/art'
   pod 'FBLazyVector', :path => "../node_modules/react-native/Libraries/FBLazyVector"
   pod 'FBReactNativeSpec', :path => "../node_modules/react-native/Libraries/FBReactNativeSpec"
   pod 'RCTRequired', :path => "../node_modules/react-native/Libraries/RCTRequired"
@@ -89,6 +90,12 @@ target 'moneytor' do
   pod 'react-native-safe-area-context', :path => '../node_modules/react-native-safe-area-context'
 
 
+
+  pod 'RNReanimated', :path => '../node_modules/react-native-reanimated'
+
+  pod 'react-native-blur', :path => '../node_modules/@react-native-community/blur'
+
+  pod 'RNSound', :path => '../node_modules/react-native-sound'
 
   target 'moneytorTests' do
     inherit! :complete

@@ -8,8 +8,8 @@ const timeNow = async => {
 
 export const getFxRateLight = async (name, params) => {
   console.log("INFO: getFxRateLight() called");
-  const { sendAmount } = params;
-  const item = [name.toUpperCase(), sendAmount, "RATE"].join("_");
+  const { sendAmount, sCurrencyCode, dCurrencyCode } = params;
+  const item = [name.toUpperCase(), sCurrencyCode, dCurrencyCode, sendAmount, "RATE"].join("_");
 	const value = await readStoreItem(item);
   const now = await timeNow();
   if (value) {

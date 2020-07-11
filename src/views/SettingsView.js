@@ -14,59 +14,37 @@ import {
 
 import { fromCurrency, toCurrency, symbols } from '../config/CurrencyList';
 import { readStoreItem, createStoreItem } from '../lib/AppStorage';
+import * as Notifications from '../lib/NotificationHandler';
 
 export default class Settings extends Component {
   state = {
-    to_currency: 0,
-    from_currency: 0,
-    min_limit: null,
-    max_limit: null,
-    send_amount: null
+    to: 0,
+    from: 0, 
+    min: null,
+    max: null,
+    sendAmount: null,
+    handle: null,
   };
 
-  componentDidMount() {
+  componentDidMount = () => {
     console.log("INFO: Settings::componentDidMount() called");
-    this.getDefaults();
-  }
+    console.log("Settings: ", this.props);
+    const {to, from, sendAmount, min, max, handle} = this.props;
+    this.setState({to, from, sendAmount, min, max, handle});
+  };
 
-  componentWillUnmount() {
+  componentWillUnmount = () => {
     console.log("INFO: Settings::componentWillUnmount() called");
-    /*
-    createStoreItem("MIN_LIMIT", this.state.min_limit);
-    createStoreItem("MAX_LIMIT", this.state.max_limit);
-    createStoreItem("TO_CURRENCY", this.state.to_currency);
-    createStoreItem("FROM_CURRENCY", this.state.from_currency);
-    */
-  }
-
-  getDefaults = async () => {
-    let min_limit = await readStoreItem("MIN_LIMIT");
-    let max_limit = await readStoreItem("MAX_LIMIT");
-    min_limit = min_limit || "0.00";
-    max_limit = max_limit || "0.00";
-    let to_currency = await readStoreItem("TO_CURRENCY");
-    let from_currency = await readStoreItem("FROM_CURRENCY");
-    to_currency = to_currency || 0;
-    from_currency = from_currency || 0;
-    let send_amount = await readStoreItem("SEND_AMOUNT");
-    send_amount = send_amount || 2000;
-    this.setState({ min_limit, max_limit, to_currency, from_currency, send_amount });
   };
 
-  handleCurrencyChange = (param, value) => {
-    console.log("INFO: Settings::handleCurrencyChange() called");
+  handleChange = (param, value) => {
+    console.log("INFO: Settings::handleChange() called");
     this.setState({[param]: value});
-    createStoreItem(param.toUpperCase(), value);
-  };
-
-  handleLimitChange = (param, value) => {
-    console.log("INFO: Settings::handleLimitChange() called");
-    this.setState({[param]: value});
-    createStoreItem(param.toUpperCase(), value);
+    this.state.handle(this.state);
   };
 
   // for tracking purpose, don't store
-  handleChange = (param, value) => {
+  handleTrackChange = (param, value) => {
     console.log("INFO: Settings::handleChange() called");
     this.setState({[param]: value});
   };
@@ -87,8 +65,8 @@ export default class Settings extends Component {
               itemCount={5}
               //itemColor={'red'}
               data={fromCurrency}
-              value={this.state.from_currency}
-              onChangeText={value => this.handleCurrencyChange('from_currency', value)}
+              value={this.state.from}
+              onChangeText={value => this.handleChange('from', value)}
             />
             <Text style={style.text}>To</Text>
             <Dropdown
@@ -100,15 +78,15 @@ export default class Settings extends Component {
               itemCount={5}
               //itemColor={'red'}
               data={toCurrency}
-              value={this.state.to_currency}
-              onChangeText={value => this.handleCurrencyChange('to_currency', value)}
+              value={this.state.to}
+              onChangeText={value => this.handleChange('to', value)}
             />
           </View>
           <View style={{marginTop: 20, borderTopWidth: 1, borderColor: "silver"}}>
             <Text style={style.text}>Amount (to calculate the Rate for):</Text>
             <View style={style.limit}>
-              <Text style={style.textLimit}>{symbols[fromCurrency[this.state.from_currency].code]}</Text>
-              <Text style={style.text}>{this.state.send_amount}</Text>
+              <Text style={style.textLimit}>{symbols[fromCurrency[this.state.from].code]}</Text>
+              <Text style={style.text}>{this.state.sendAmount}</Text>
               <Slider
                 disabled={true}
                 step={50}
@@ -117,9 +95,9 @@ export default class Settings extends Component {
                 maximumValue={9999}
                 maximumTrackTintColor="gray"
                 thumbTintColor="blue"
-                value={this.state.send_amount}
-                onSlidingComplete={value => this.handleLimitChange('send_amount', value)}
-                onValueChange={value => this.handleChange('send_amount', value)}
+                value={this.state.sendAmount}
+                onSlidingComplete={value => this.handleChange('sendAmount', value)}
+                onValueChange={value => this.handleTrackChange('sendAmount', value)}
                 style={style.slider}
                 useNativeDriver={true}
               />
@@ -128,26 +106,26 @@ export default class Settings extends Component {
           <View style={{marginTop: 20, borderTopWidth: 1, borderColor: "silver"}}>
             <Text style={style.text}>When to notify?</Text>
             <View style={style.limit}>
-              <Text style={style.textLimit}>{symbols[toCurrency[this.state.to_currency].code]}</Text>
+              <Text style={style.textLimit}>{symbols[toCurrency[this.state.to].code]}</Text>
               <TextInput
                 keyboardType="numeric"
                 style={style.textInput}
                 maxLength={7}
                 autoGrow={true}
                 maxHeight={50}
-                value={this.state.min_limit}
-                onChangeText={value => this.handleLimitChange('min_limit', value)}
+                value={this.state.min}
+                onChangeText={value => this.handleChange('min', value)}
               />
               <Text style={style.textLimit}>&ge;</Text>
               <Text style={style.textLimit}>Fx Rate</Text>
               <Text style={style.textLimit}>&ge;</Text>
-              <Text style={style.textLimit}>{symbols[toCurrency[this.state.to_currency].code]}</Text>
+              <Text style={style.textLimit}>{symbols[toCurrency[this.state.to].code]}</Text>
               <TextInput
                 keyboardType="numeric"
                 style={style.textInput}
                 maxLength={7}
-                value={this.state.max_limit}
-                onChangeText={value => this.handleLimitChange('max_limit', value)}
+                value={this.state.max}
+                onChangeText={value => this.handleChange('max', value)}
               />
             </View>
           </View>

@@ -24,7 +24,6 @@ import Settings from './src/views/SettingsView';
 import ContactUs from './src/views/ContactView';
 import BadgeCount from './src/views/BadgeView';
 import * as Notifications from './src/lib/NotificationHandler';
-import { navigationRef, isMountedRef } from './src/lib/NavigationHandler';
 
 const ContactScreen = () => {
   console.log("INFO: App::ContactScreen() called");
@@ -35,20 +34,20 @@ const ContactScreen = () => {
   );
 };
 
-const SettingsScreen = () => {
+const SettingsScreen = (props) => {
   console.log("INFO: App::SettingsScreen() called");
   return (
     <ScrollView contentContainerStyle={style.scrollView}>
-      <Settings />
+      <Settings {...props.screenProps} />
     </ScrollView>
   );
 };
 
-const AlertScreen = () => {
+const AlertScreen = (props) => {
   console.log("INFO: App::AlertScreen() called");
   return (
     <ScrollView contentContainerStyle={style.scrollView}>
-      <Alerts />
+      <Alerts {...props.screenProps} />
     </ScrollView>
   );
 };
@@ -57,7 +56,7 @@ const HomeScreen = (props) => {
   console.log("INFO: App::HomeScreen() called");
   return (
     <ScrollView contentContainerStyle={style.scrollView}>
-      <Home />
+      <Home {...props.screenProps} navigation={props.navigation} />
     </ScrollView>
   );
 };
@@ -152,7 +151,31 @@ const TabNavigator = createMaterialTopTabNavigator(RouteConfigs, BottomTabNaviga
 const AppContainer = createAppContainer(TabNavigator);
 
 export default function App() {
-  const [hello, setHello] = useState(0);
+  const [to, setTo] = useState(0);
+  const [from, setFrom] = useState(0);
+  const [sendAmount, setSendAmount] = useState(2000);
+  const [min, setMin] = useState("0.00");
+  const [max, setMax] = useState("0.00");
+
+  const handle = async (obj) => {
+    console.log(`hola!, I'm finally called!`);
+    console.log("OBJ: ", obj);
+    if (obj.to !== undefined) {
+      setTo(obj.to);
+    }
+    if (obj.from !== undefined) {
+      setFrom(obj.from);
+    }
+    if (obj.sendAmount !== undefined) {
+      setSendAmount(obj.sendAmount);
+    }
+    if (obj.min !== undefined) {
+      setMin(obj.min);
+    }
+    if (obj.max !== undefined) {
+      setMax(obj.max);
+    }
+  };
 
   useEffect(() => {
     console.log("INFO: App::componentDidMount() called");
@@ -160,23 +183,19 @@ export default function App() {
       Notifications.createNotificationChannel();
     }
 
-    // to track when the App is mounted
-    isMountedRef.current = true;
-
     Notifications.checkPermission();
     Notifications.createNotificationListeners();
 
     // clean up
     return () => {
       console.log("INFO: App::componentWillUnmount() called");
-      isMountedRef.current = false;
       Notifications.notificationListener = null;
       Notifications.notificationOpenedListener = null;
     }
   }, []);
 
   return (
-    <AppContainer ref={navigationRef} />
+    <AppContainer screenProps={{ to, from, sendAmount, min, max, handle: (obj) => handle(obj)}} />
   )
 }
 

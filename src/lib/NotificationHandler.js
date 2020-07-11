@@ -1,9 +1,7 @@
 import firebase from 'react-native-firebase';
-import events from 'events';
 import { Alert } from 'react-native';
 
 import { createStoreItem, readStoreItem, removeStoreItem } from './AppStorage';
-import * as RootNavigation from './NavigationHandler';
 import { getFxRateLight } from '../lib/FxRateLight';
 import { getCountry } from '../lib/CountryData';
 
@@ -11,10 +9,30 @@ let notificationOpenedListener;
 let notificationListener;
 let messageListener;
 
-const eventEmitter = events.EventEmitter();
+let to = from = sendAmount = navigation = null;
+
+const updateDefaults = async (params) => {
+  console.log("INFO: Notifications::updateDefaults() called");
+
+  // important param - navigation object to control whole app
+  if (params.navigation) {
+    navigation = params.navigation;
+  }
+
+  if (params.to !== undefined && params.to !== to) {
+    to = params.to;
+  }
+  if (params.from !== undefined && params.from !== from) {
+    from = params.from;
+  }
+  if (params.sendAmount !== undefined && params.sendAmount !== sendAmount) {
+    sendAmount = params.sendAmount;
+  }
+  console.log([to, from, sendAmount].join(":"));
+};
 
 const createNotificationChannel = () => {
-  console.log("INFO: Notifications::Notifications::createNotificationChannel() called");
+  console.log("INFO: Notifications::createNotificationChannel() called");
   new firebase
     .notifications
     .Android
@@ -48,7 +66,7 @@ const createNotificationChannel = () => {
 };
 
 const checkPermission = async () => {
-  console.log("INFO: Notifications::Notifications::checkPermission() called");
+  console.log("INFO: Notifications::checkPermission() called");
   const enabled = await firebase.messaging().hasPermission();
 
   if (enabled) {
@@ -62,7 +80,7 @@ const checkPermission = async () => {
 };
 
 const requestPermission = async () => {
-  console.log("INFO: Notifications::Notifications::requestPermission() called");
+  console.log("INFO: Notifications::requestPermission() called");
   let fcmToken;
   try {
     // try getting permission
@@ -80,7 +98,7 @@ const requestPermission = async () => {
 
 // get token and store for future use
 const getToken = async () => {
-  console.log("INFO: Notifications::Notifications::getToken() called");
+  console.log("INFO: Notifications::getToken() called");
   let fcmToken = await readStoreItem('FCMToken');
   if (!fcmToken) {
     fcmToken = await firebase.messaging().getToken();
@@ -93,7 +111,7 @@ const getToken = async () => {
 };
 
 const storeNotification = async message => {
-  console.log("INFO: Notifications::Notifications::storeNotification() called");
+  console.log("INFO: Notifications::storeNotification() called");
   const notif = await readStoreItem('NOTIFs');
   let obj = {};
   if (notif) {
@@ -110,7 +128,7 @@ const storeNotification = async message => {
 };
 
 const createNotificationListeners = async (props) => {
-  console.log("INFO: Notifications::Notifications::createNotificationListeners() called");
+  console.log("INFO: Notifications::createNotificationListeners() called");
   // on receival of notification
   notificatonListener = firebase.notifications().onNotification(async notification => {
     const { title, body, notificationId } = notification;
@@ -131,8 +149,6 @@ const createNotificationListeners = async (props) => {
       firebase.notifications().setBadge(++badgeCount);
     }
 
-    console.log("emit", eventEmitter.emit("updateBadge"));
-
     // display notification
     firebase.notifications()
     .displayNotification(localNotification)
@@ -146,9 +162,8 @@ const createNotificationListeners = async (props) => {
   notificationOpenedListener = firebase.notifications().onNotificationOpened(async notificationOpen => {
     let badgeCount = await firebase.notifications().getBadge();
     firebase.notifications().setBadge(--badgeCount);
-    //const { title, body } = notificationOpen.notification;
     console.log('INFO: notification opened for ' + notificationOpen.notification.notificationId);
-    RootNavigation.navigate('Alerts', { t: "342"});
+    navigation.navigate('Alerts', {});
   });
 
   // when app is closed 
@@ -165,7 +180,7 @@ const createNotificationListeners = async (props) => {
 };
 
 const runSchedule = async (name, schedule) => {
-  console.log("INFO: Notifications::Notifications::runSchedule() called");
+  console.log("INFO: Notifications::runSchedule() called");
   const date = new Date();
   const fireDate = date.getTime() + 4000; // delay 4s
 
@@ -185,7 +200,7 @@ const runSchedule = async (name, schedule) => {
 };
 
 const scheduleNotification = async (name, schedule) => {
-  console.log("INFO: Notifications::Notifications::scheduleNotification() called");
+  console.log("INFO: Notifications::scheduleNotification() called");
   const key = "TIMER_ID_" + name.toUpperCase();
   schedule = 'minly'; // for testing
   let timeToWait = 60; // ms
@@ -203,6 +218,7 @@ const scheduleNotification = async (name, schedule) => {
       timeToWait = 60;
   }
   timeToWait *= 1000; // to seconds
+  // using javascript setInterval so we can always build a dynamic message and the real current rate
   const timerId = setInterval(() => runSchedule(name, schedule), timeToWait);
   if (timerId) {
     console.log("INFO: timer id to store: " + timerId);
@@ -211,7 +227,7 @@ const scheduleNotification = async (name, schedule) => {
 };
 
 const cancelNotification = async (name) => {
-  console.log("INFO: Notifications::Notifications::cancelNotification() called");
+  console.log("INFO: Notifications::cancelNotification() called");
   const key = "TIMER_ID_" + name.toUpperCase();
   const timerId = await readStoreItem(key);
   if (timerId) {
@@ -222,6 +238,9 @@ const cancelNotification = async (name) => {
   }
 
   /*
+   * this was used when we were repeating the schedule via firebase itself
+   *
+
   firebase
   .notifications()
   .cancelNotification(id)
@@ -232,16 +251,19 @@ const cancelNotification = async (name) => {
     console.log("ERROR: failed to cancel notification for " + id);
     console.log(error);
   });
+
+  *
+  *
   */
 };
 
 const _buildNotification = async (name) => {
-  console.log("INFO: Notifications::Notifications::_buildNotification() called");
+  console.log("INFO: Notifications::_buildNotification() called");
   //const title = (Platform.OS === "android") ? "Android Updates" : "Apple Updates";
-  const countryObj = await getCountry();
+  const countryObj = await getCountry(to, from);
   let fxRate = null;
   try {
-    fxRate = await getFxRateLight(name, countryObj); 
+    fxRate = await getFxRateLight(name, {...countryObj, sendAmount});
   }
   catch(err) {
     console.log("ERROR: ", err);
@@ -251,7 +273,8 @@ const _buildNotification = async (name) => {
   if (fxRate) {
     const title = `Fx Rate updates for ${name}`;
     const { sCountryCode, sCurrencySign, dCurrencySign } = countryObj;
-    const body = `The current xchange rate (${name}): ${sCountryCode}${sCurrencySign} 1.00 = ${dCurrencySign} ${fxRate}`;
+    const body = `The current rate offered by ${name}: ${sCountryCode}${sCurrencySign}1.00 = ${dCurrencySign}${fxRate}` +
+                 `\r\n***calculated for ${sCurrencySign} ${sendAmount}`;
 
     // create a new instance
     let notification = null;
@@ -292,4 +315,5 @@ export {
   notificationOpenedListener,
   notificationListener,
   messageListener,
+  updateDefaults,
 }

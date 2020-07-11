@@ -1,16 +1,23 @@
 import { fromCurrency, toCurrency, symbols } from '../config/CurrencyList';
-import { readStoreItem, createStoreItem } from './AppStorage';
+//import { readStoreItem, createStoreItem } from './AppStorage';
 
-export const getCountry = async () => {
+export const getCountry = async (to, from) => {
   console.log("INFO: getCountry() called");
-  let to = await readStoreItem("TO_CURRENCY");
-  to = to || 0;
+  /*
+   * previous code before having implemented the props passing from
+   * Settings -> App -> Home
+ 
+      let to = await readStoreItem("TO_CURRENCY");
+      to = to || 0;
 
-  let from = await readStoreItem("FROM_CURRENCY");
-  from = from || 0;
+      let from = await readStoreItem("FROM_CURRENCY");
+      from = from || 0;
 
-  let sendAmount = await readStoreItem("SEND_AMOUNT");
-  sendAmount = sendAmount || 2000;
+      let sendAmount = await readStoreItem("SEND_AMOUNT");
+      sendAmount = sendAmount || 2000;
+  *
+  *
+  */
 
   const sCountryCode = fromCurrency[from].code;
   const dCountryCode = toCurrency[to].code;
@@ -22,10 +29,10 @@ export const getCountry = async () => {
   const country = {
     sCountryCode,
     dCountryCode,
+    sCurrencyCode,
     dCurrencyCode,
     sCurrencySign,
-    dCurrencySign,
-    sendAmount
+    dCurrencySign
   };
 
   return country;
